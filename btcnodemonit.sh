@@ -132,7 +132,7 @@ if df --output=avail --block-size=1 / >/dev/null 2>&1; then
 else
   # 'df' command options for MAC OS. Suggested by AI. Untested.
   # Multiply 4th colum by 1024 to convert KB into bytes
-  diskAvail=$(df -k "$bitcoinDir" | tail -1 | awk '{print $4 * 1024}')
+  diskAvail=$(df -k "$bitcoinDir" | tail -1 | awk '{printf "%.0f", $4 * 1024}')
   #diskAvail=0
 fi
 systemLoad=$(uptime |grep -E --only-matching "load average.+")
