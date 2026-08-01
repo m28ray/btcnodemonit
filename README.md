@@ -1,6 +1,8 @@
 # btcnodemonit
 A bash script that shows bitcoin node stats and block stats.
 
+![Screenshot](/screenshot.png)
+
 ## How to use
 
 Show node stats and recent block stats then exit `./btcnodemonit.sh` 
