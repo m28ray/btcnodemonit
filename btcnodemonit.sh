@@ -178,5 +178,5 @@ echo "$gbs" | grep -E --after-context=5 '"feerate_percentiles"' \
 echo ""
 echo ""
 bytesPrefix "\"disk space avail\": $diskAvail" "disk space avail"
-echo "$systemLoad" |sed 's/^/  /'
+echo "  $systemLoad"
 echo ""
