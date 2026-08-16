@@ -30,3 +30,9 @@ The bitcoin-cli command and optional arguments.
 The script sends these RPC commands:
 
 `getblockcount` `getnetworkinfo` `getnettotals` `getmempoolinfo` `getblockstats` `getpeerinfo`
+
+## Automate with Crontab (Optional)
+Run the script every 5 minutes and save the output to a file. \
+*Prerequisite: the crontab user has execute permission on the script and write permission on the output directory.*
+
+`*/5 * * * * /path/to/btcnodemonit.sh > /var/www/html/btcnodemonit-out.txt 2>&1`
