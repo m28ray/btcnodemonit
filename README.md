@@ -12,23 +12,21 @@ Show node stats and given block stats then exit `./btcnodemonit.sh [blockNumber]
 
 
 ## First steps
-Make file executable `chmod u+x btcnodemonit.sh`
+**Make file executable** `chmod u+x btcnodemonit.sh`
 
 **Set user defined variables**
 
-*bitcoinDir*
+<ins>bitcoinDir<ins>
 
 The filesystem (Example: /dev/sdb) or mount point (Example: /mnt/data)
 of the bitcoin directory. If left blank the default is /.
 Used by 'df' command to show free disk space.
 
-*bitcoinCli*
+<ins>bitcoinCli<ins>
 
 The bitcoin-cli command and optional arguments.
 
 ## RPC Whitelist
-The script sends these rpc commands:
+The script sends these RPC commands:
 
-getblockcount getnetworkinfo getnettotals getmempoolinfo getblockstats getpeerinfo
-
-
+`getblockcount` `getnetworkinfo` `getnettotals` `getmempoolinfo` `getblockstats` `getpeerinfo`
