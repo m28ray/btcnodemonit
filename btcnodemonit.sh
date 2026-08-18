@@ -141,9 +141,8 @@ minutesSM=$(minutesSinceMined "$gbs")
 date=$(date "+%Y-%m-%d %I:%M:%S %p %Z")
 
 # Format output
-[[ $gbc -le 961632 ]] && echo "Mandatory signalling begins at block 961632"
 echo "  $hostName  $date"
-echo "$gni" |grep -E "connections" |tr -d '",' |sed 's/    //'
+echo "$gni" |grep "connections" |tr -d '",' |sed 's/    //'
 echo "  bip110 peers: $bip110Count"
 bytesPrefix "$gnt" "totalbytesrecv"
 bytesPrefix "$gnt" "totalbytessent"
@@ -161,11 +160,11 @@ echo ""
 echo "  block: $gbc  $minutesSM"
 bytesPrefix "$gbs" "total_size"
 bytesPrefix "$gbs" "total_weight" | sed 's/B$/WU/'
-echo "$gbs" | grep -E 'utxo_increase' | tr -d '",'
+echo "$gbs" | grep 'utxo_increase' | tr -d '",'
 bytesPrefix "$gbs" "utxo_size_inc"
 bytesPrefix "$gbs" "utxo_size_inc_actual"
-echo "$gbs" | grep -E '"txs"' |tr -d '",'
-totalOut=$(echo "$gbs" | grep -E '"total_out"' |grep -E --only-matching "[0-9]+")
+echo "$gbs" | grep '"txs"' |tr -d '",'
+totalOut=$(echo "$gbs" | grep '"total_out"' |grep -E --only-matching "[0-9]+")
 if [[ $thousandsSeparator -eq 1 ]]; then
   awk -v tOut="$totalOut" 'BEGIN {printf "  total_out: %\047.2f BTC\n", tOut/100000000}'
 else
@@ -173,7 +172,7 @@ else
 fi
 echo "$gbs" | grep -E '"avgfeerate"|"minfeerate"|"maxfeerate"' \
      |tr -d '",' | sed 's|$| sat/vB|'
-echo "$gbs" | grep -E --after-context=5 '"feerate_percentiles"' \
+echo "$gbs" | grep --after-context=5 '"feerate_percentiles"' \
      |tr -d '\n"[' |sed 's/: /:/' |sed 's/    / /g'
 echo ""
 echo ""
