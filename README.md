@@ -31,7 +31,7 @@ The script sends these RPC commands:
 
 `getblockcount` `getnetworkinfo` `getnettotals` `getmempoolinfo` `getblockstats` `getpeerinfo`
 
-## Automate with Crontab (Optional)
+## Automate with Crontab
 Run the script every 5 minutes and save the output to a file. \
 *Prerequisite: the crontab user has execute permission on the script and write permission on the output directory.*
 
