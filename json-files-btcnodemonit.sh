@@ -27,9 +27,7 @@
 # How to use:
 #
 # json-files-btcnodemonit.sh
-#   Get data from .json files in the directory specified in the
-#  "jsonDir" variable under the "User defined variable" section
-#   then exit
+#   Get data from .json files in the same directory as this script then exit.
 #
 # json-files-btcnodemonit.sh [jsonDir]
 #   Get data from .json files in the directory added after the 
@@ -39,16 +37,7 @@
 #   ./json-files-btcnodemonit.sh "/path/to/myData"
 #
 ################################################
-#
-# User defined variable
-#
-# jsonDir
-# The directory with the .json files. Bitcoin Knots RPC returns
-# .json formatted results. The result can be saved to a .json file.
-jsonDir=""
-#
-#
-################################################
+
 
 set -o errexit #Exit immediately if any command returns a non-zero exit status
 # set -o xtrace #Uncomment for debugging
@@ -62,7 +51,7 @@ getblockstats.json
 getpeerinfo.json
 )
 
-showBlockStats=1
+readonly showBlockStats=1
 thousandsSeparator=0
 if awk -W version 2>/dev/null |grep --quiet "mawk"; then
   thousandsSeparator=1
@@ -108,7 +97,6 @@ function bytesPrefix {
 function minutesSinceMined {
   local blockTime unixSeconds
   blockTime=$(grep "\"time\"" <<<"$1" |grep -E --only-matching "[0-9]+")
-  unixSeconds=$(date +%s)
   awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" \
     'BEGIN {printf "%.1f min ago\n", (unixSeconds-blockTime)/60}'
 }
@@ -117,11 +105,7 @@ function minutesSinceMined {
 # Function validateJsonDir
 # Number of arguments: 0
 function validateJsonDir {
-  if [[ -z "$jsonDir" ]]; then
-    local helpText="Specify a directory on the command line or in the script variable.\n\nHow to use:\n\njson-files-btcnodemonit.sh\n  Get data from .json files in the directory specified in the \"jsonDir\" variable\n  under the \"User defined variable\" section of this script.\n\ndata-from-json-files-btcnodemonit.sh [jsonDir]\n./json-files-btcnodemonit.sh \"/path/to/myData\"\n  Get data from .json files in the directory added after the script name.\n\n"
-    printf '%b' "$helpText"
-    exit 1
-  fi
+    local helpText="\nPlace this script in the same directory as the .json files or type\nthe .json files directory after the script name:\n\n./json-files-btcnodemonit.sh\n./json-files-btcnodemonit.sh \"/path/to/myData\"\n\n"
   if ! [[ "$jsonDir" =~ ^[\ a-zA-Z0-9/_.-]+$ ]]; then
     echo "Error: \"jsonDir\" has invalid characters"
     exit 1
@@ -132,17 +116,20 @@ function validateJsonDir {
   fi
   if ! [[ -r "$jsonDir"  ]]; then
     echo "Error: $jsonDir is not readable by you"
+    printf '%b' "$helpText"
     exit 1
   fi
   for f in ${files[@]}; do
     if ! [[ -r "$jsonDir/$f" ]]; then
       echo "Error: $f is not readable by you"
+      printf '%b' "$helpText"
       exit 1
     fi
   done
 }
 
 
+jsonDir="$(dirname "$0")"
 if [[ -n "$1" ]]; then
   jsonDir="$1"
 fi
@@ -162,7 +149,6 @@ timeMilliS=$(grep '"timemillis"' <<<"$gnt" \
            | grep -E --only-matching "[0-9]+" \
            | awk '{printf "%.0f", $1/1000 }')
 date=$(date -d @$timeMilliS "+%Y-%m-%d %I:%M:%S %p %Z")
-
 
 # Format output
 echo "  date: $date"
