@@ -106,7 +106,7 @@ function minutesSinceMined {
 # Function validateJsonDir
 # Number of arguments: 0
 function validateJsonDir {
-    local helpText="\nPlace this script in the same directory as the .json files or type\nthe .json files directory after the script name:\n\n./json-files-btcnodemonit.sh\n./json-files-btcnodemonit.sh \"/path/to/myData\"\n\n"
+  local helpText="\nPlace this script in the same directory as the .json files or type\nthe .json files directory after the script name:\n\n./json-files-btcnodemonit.sh\n./json-files-btcnodemonit.sh \"/path/to/myData\"\n\n"
   if ! [[ "$jsonDir" =~ ^[\ a-zA-Z0-9/_.-]+$ ]]; then
     echo "Error: \"jsonDir\" has invalid characters"
     exit 1
