@@ -158,7 +158,12 @@ fi
 timeMilliS=$(grep '"timemillis"' <<<"$gnt" \
            | grep -E --only-matching "[0-9]+" \
            | awk '{printf "%.0f", $1/1000 }')
-date=$(date -d @$timeMilliS "+%Y-%m-%d %I:%M:%S %p %Z")
+# Linux and Mac date
+if date --date=@1 >/dev/null 2>&1; then
+  date=$(date --date=@$timeMilliS "+%Y-%m-%d %I:%M:%S %p %Z")
+else
+  date=$(date -r $timeMilliS "+%Y-%m-%d %I:%M:%S %p %Z")
+fi
 
 # Format output
 echo "  date: $date"
@@ -177,7 +182,7 @@ echo "$gmi" | grep 'total_fee' |tr -d '",' | sed 's/$/ BTC/' \
 bytesPrefix "$gmi" "usage" |sed 's/usage/mempool memory usage/'
 echo ""
 
-printf "  block: $gbc"
+printf "  block: %s" "$gbc"
 if [[ showBlockStats -eq 0 ]]; then
   echo ""
   exit 0
