@@ -41,3 +41,6 @@ Run the script every 5 minutes and save the output to a file. \
 ```
 */5 * * * * /path/to/btcnodemonit.sh > /var/www/html/btcnodemonit-out.txt 2>&1
 ```
+## json-files-btcnodemonit.sh
+This script reads data from **.json** files rather than querying a bitcoin node. \
+Place this script in the same directory as the .json files or type the .json files directory after the script name.
