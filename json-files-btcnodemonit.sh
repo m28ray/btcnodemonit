@@ -145,6 +145,15 @@ gbs=$(< "$jsonDir/${files[4]}") # getblockstats
 bip110Count=$(grep --count "REDUCED_DATA?" "$jsonDir/${files[5]}" \
             || true) # getpeerinfo
 
+# Confirm getblockcount and getblockstats are for the same block
+if [[ showBlockStats -eq 1 ]]; then
+  blockStatsHeight=$(grep '"height"' <<< "$gbs" | grep -E --only-matching "[0-9]+")
+  if ! [[ $gbc -eq  $blockStatsHeight ]]; then
+    echo "Error: getblockcount and getblockstats are not for the same block"
+    exit 1
+  fi
+fi
+
 # More data
 timeMilliS=$(grep '"timemillis"' <<<"$gnt" \
            | grep -E --only-matching "[0-9]+" \
