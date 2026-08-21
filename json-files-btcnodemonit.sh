@@ -96,6 +96,7 @@ function bytesPrefix {
 # Argument: Block stats
 function minutesSinceMined {
   local blockTime unixSeconds
+  unixSeconds=$(date +%s)
   blockTime=$(grep "\"time\"" <<<"$1" |grep -E --only-matching "[0-9]+")
   awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" \
     'BEGIN {printf "%.1f min ago\n", (unixSeconds-blockTime)/60}'
