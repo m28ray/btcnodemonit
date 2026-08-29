@@ -38,11 +38,7 @@
 #
 ################################################
 
-
-set -o errexit #Exit immediately if any command returns a non-zero exit status
-# set -o xtrace #Uncomment for debugging
-
-files=(
+readonly files=(
 getblockcount.json
 getnetworkinfo.json
 getnettotals.json
@@ -51,11 +47,10 @@ getblockstats.json
 getpeerinfo.json
 )
 
+set -o errexit #Exit immediately if any command returns a non-zero exit status
+# set -o xtrace #Uncomment for debugging
+
 readonly showBlockStats=1
-thousandsSeparator=0
-if awk -W version 2>/dev/null |grep --quiet "mawk"; then
-  thousandsSeparator=1
-fi
 
 # Function bytesPrefix
 # Number of arguments: 2
@@ -74,22 +69,17 @@ function bytesPrefix {
   prefix=""
   if [[ $bytes -ge 1000000000 ]]; then
     prefix="G"
-    bytes=$(awk -v byte="$bytes" 'BEGIN {print byte/1000000000}')
+    bytes=$(awk -v byte="$bytes" -v q="'" 'BEGIN {printf "%"q".2f", byte/1000000000}')
   elif [[ $bytes -ge 1000000 ]]; then
     prefix="M"
-    bytes=$(awk -v byte="$bytes" 'BEGIN {print byte/1000000}')
+    bytes=$(awk -v byte="$bytes" -v q="'" 'BEGIN {printf "%"q".2f", byte/1000000}')
   elif [[ $bytes -ge 1000 ]]; then
     prefix="K"
-    bytes=$(awk -v byte="$bytes" 'BEGIN {print byte/1000}')
+    bytes=$(awk -v byte="$bytes" -v q="'" 'BEGIN {printf "%"q".2f", byte/1000}')
   fi
 
-  if [[ $thousandsSeparator -eq 1 ]]; then
-    printf "  %s: %s%'.2f %sB\n" "$text" "$negSign" "$bytes" "$prefix"
-  else
-    printf "  %s: %s%.2f %sB\n" "$text" "$negSign" "$bytes" "$prefix"
-  fi
+  printf "  %s: %s%s %sB\n" "$text" "$negSign" "$bytes" "$prefix"
 }
-
 
 # Function minutesSinceMined
 # Number of arguments: 1
@@ -101,7 +91,6 @@ function minutesSinceMined {
   awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" \
     'BEGIN {printf "%.1f min ago\n", (unixSeconds-blockTime)/60}'
 }
-
 
 # Function validateJsonDir
 # Number of arguments: 0
@@ -127,6 +116,17 @@ function validateJsonDir {
       exit 1
     fi
   done
+}
+
+# Function printInteger
+# Number of arguments: 4
+# Arguments: Bitcoin-cli output, The item to match, The display name, The unit
+# Example: printInteger "$gmi" "size" "mempool tx count" ""
+function printInteger {
+  local number
+  number="$(grep "\"$2\"" <<< "$1" | grep -E --only-matching -- "-?[0-9]+" \
+          || echo "No matching integer")"
+  printf "  $3: %'.0f $4\n" "$number"
 }
 
 
@@ -165,6 +165,7 @@ else
   date=$(date -r $timeMilliS "+%Y-%m-%d %I:%M:%S %p %Z")
 fi
 
+
 # Format output
 echo "  date: $date"
 echo "$gni" |grep "connections" |tr -d '",' |sed 's/    //'
@@ -175,7 +176,7 @@ bytesPrefix "$gnt" "bytes_left_in_cycle"
 echo "$gnt" |grep "time_left_in_cycle" |grep -E --only-matching "[0-9]+" \
      |awk '{printf "  time_left_in_cycle: %.2f h\n", $1/60/60}'
 echo ""
-echo "$gmi" | grep 'size' |tr -d '",' | sed 's/size/mempool tx count/'
+printInteger "$gmi" "size" "mempool tx count" ""
 bytesPrefix "$gmi" "bytes" | sed 's/B$/vB/'| sed 's/bytes/mempool virtual bytes/'
 echo "$gmi" | grep 'total_fee' |tr -d '",' | sed 's/$/ BTC/' \
      | sed 's/total_fee/mempool total_fee/'
@@ -190,18 +191,17 @@ fi
 echo "  $(minutesSinceMined "$gbs")"
 bytesPrefix "$gbs" "total_size"
 bytesPrefix "$gbs" "total_weight" | sed 's/B$/WU/'
-echo "$gbs" | grep 'utxo_increase' | tr -d '",'
+printInteger "$gbs" "utxo_increase" "utxo_increase" ""
+printInteger "$gbs" "utxo_increase_actual" "utxo_increase_actual" ""
 bytesPrefix "$gbs" "utxo_size_inc"
 bytesPrefix "$gbs" "utxo_size_inc_actual"
-echo "$gbs" | grep '"txs"' |tr -d '",'
-totalOut=$(echo "$gbs" | grep '"total_out"' |grep -E --only-matching "[0-9]+")
-if [[ $thousandsSeparator -eq 1 ]]; then
-  awk -v tOut="$totalOut" 'BEGIN {printf "  total_out: %\047.2f BTC\n", tOut/100000000}'
-else
-  awk -v tOut="$totalOut" 'BEGIN {printf "  total_out: %.2f BTC\n", tOut/100000000}'
-fi
-echo "$gbs" | grep -E '"avgfeerate"|"minfeerate"|"maxfeerate"' \
-     |tr -d '",' | sed 's|$| sat/vB|'
+printInteger "$gbs" "txs" "txs" ""
+totalOut=$(grep '"total_out"' <<< "$gbs" |grep -E --only-matching "[0-9]+")
+awk -v tOut="$totalOut" -v q="'" \
+    'BEGIN {printf "  total_out: %"q".2f BTC\n", tOut/100000000}'
+printInteger "$gbs" "avgfeerate" "avgfeerate" "sat/vB"
+printInteger "$gbs" "minfeerate" "minfeerate" "sat/vB"
+printInteger "$gbs" "maxfeerate" "maxfeerate" "sat/vB"
 echo "$gbs" | grep --after-context=5 '"feerate_percentiles"' \
      |tr -d '\n"[' |sed 's/: /:/' |sed 's/    / /g'
 echo ""
