@@ -47,23 +47,27 @@ getblockstats.json
 getpeerinfo.json
 )
 
-set -o errexit #Exit immediately if any command returns a non-zero exit status
-# set -o xtrace #Uncomment for debugging
+set -o errexit # Exit immediately if any command returns a non-zero exit status
+# set -o xtrace # Uncomment for debugging
 
 readonly showBlockStats=1
 
 # Function bytesPrefix
-# Number of arguments: 2
-# Arguments: Bitcoin-cli output, The item to match
+# Number of arguments: 4
+# Arguments: Bitcoin-cli output, The item to match, The display name, The unit
 function bytesPrefix {
-  local line text bytes prefix negSign
+  local line text bytes prefix negSign unit
   line=$(grep "\"$2\"" <<< "$1")
-  text="$2"
+  text="$3"
   bytes=$(grep -E --only-matching "[0-9]+" <<< "$line")
   if grep --quiet -- "-[0-9]" <<< "$line"; then
     negSign="-"
   else
     negSign=""
+  fi
+  unit="B"
+  if ! [[ -z $4 ]]; then
+    unit="$4"
   fi
 
   prefix=""
@@ -78,7 +82,7 @@ function bytesPrefix {
     bytes=$(awk -v byte="$bytes" -v q="'" 'BEGIN {printf "%"q".2f", byte/1000}')
   fi
 
-  printf "  %s: %s%s %sB\n" "$text" "$negSign" "$bytes" "$prefix"
+  printf "  %s: %s%s %s%s\n" "$text" "$negSign" "$bytes" "$prefix" "$unit"
 }
 
 # Function minutesSinceMined
@@ -88,8 +92,13 @@ function minutesSinceMined {
   local blockTime unixSeconds
   unixSeconds=$(date +%s)
   blockTime=$(grep "\"time\"" <<<"$1" |grep -E --only-matching "[0-9]+")
-  awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" \
-    'BEGIN {printf "%.1f min ago\n", (unixSeconds-blockTime)/60}'
+  if [[ $(( ($unixSeconds-$blockTime)/60 )) -lt 180 ]]; then
+    awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" \
+    'BEGIN {printf "%.1f min", (unixSeconds-blockTime)/60}'
+  else
+    awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" \
+    'BEGIN {printf "%.1f h", (unixSeconds-blockTime)/60/60}'
+  fi
 }
 
 # Function validateJsonDir
@@ -126,7 +135,20 @@ function printInteger {
   local number
   number="$(grep "\"$2\"" <<< "$1" | grep -E --only-matching -- "-?[0-9]+" \
           || echo "No matching integer")"
-  printf "  $3: %'.0f $4\n" "$number"
+  printf "  %s: %'.0f %s\n" "$3" "$number" "$4"
+}
+
+function detectCommaAsDecimalSeparator {
+  # Formats 0.5 and checks if the output contains a comma
+  # To make printf reliable for locale detection, you must check the output
+  # string rather than the exit status - Google
+  local output
+  output=$(printf "%f" 0.5 2>/dev/null)
+  if [[ "$output" =~ , ]]; then
+    echo "true"
+  else
+    echo "false"
+  fi
 }
 
 
@@ -168,19 +190,24 @@ fi
 
 # Format output
 echo "  date: $date"
-echo "$gni" |grep "connections" |tr -d '",' |sed 's/    //'
+printInteger "$gni" "connections" "connections" ""
+printInteger "$gni" "connections_in" "connections_in" ""
+printInteger "$gni" "connections_out" "connections_out" ""
 echo "  bip110 peers: $bip110Count"
-bytesPrefix "$gnt" "totalbytesrecv"
-bytesPrefix "$gnt" "totalbytessent"
-bytesPrefix "$gnt" "bytes_left_in_cycle"
-echo "$gnt" |grep "time_left_in_cycle" |grep -E --only-matching "[0-9]+" \
+bytesPrefix "$gnt" "totalbytesrecv" "totalbytesrecv" ""
+bytesPrefix "$gnt" "totalbytessent" "totalbytessent" ""
+bytesPrefix "$gnt" "bytes_left_in_cycle" "bytes_left_in_cycle" ""
+grep '"time_left_in_cycle"' <<< "$gnt" |grep -E --only-matching "[0-9]+" \
      |awk '{printf "  time_left_in_cycle: %.2f h\n", $1/60/60}'
 echo ""
 printInteger "$gmi" "size" "mempool tx count" ""
-bytesPrefix "$gmi" "bytes" | sed 's/B$/vB/'| sed 's/bytes/mempool virtual bytes/'
-echo "$gmi" | grep 'total_fee' |tr -d '",' | sed 's/$/ BTC/' \
-     | sed 's/total_fee/mempool total_fee/'
-bytesPrefix "$gmi" "usage" |sed 's/usage/mempool memory usage/'
+bytesPrefix "$gmi" "bytes" "mempool virtual bytes" "vB"
+total_fee=$(grep '"total_fee"' <<< "$gmi" |grep -E --only-matching "[0-9.]+")
+if [[ "$(detectCommaAsDecimalSeparator)" == "true" ]]; then
+  total_fee="$(tr '.' ',' <<< "$total_fee")"
+fi
+echo "  mempool total_fee: $total_fee BTC"
+bytesPrefix "$gmi" "usage" "mempool memory usage" ""
 echo ""
 
 printf "  block: %s" "$gbc"
@@ -188,13 +215,13 @@ if [[ showBlockStats -eq 0 ]]; then
   echo ""
   exit 0
 fi
-echo "  $(minutesSinceMined "$gbs")"
-bytesPrefix "$gbs" "total_size"
-bytesPrefix "$gbs" "total_weight" | sed 's/B$/WU/'
+echo "  $(minutesSinceMined "$gbs") ago"
+bytesPrefix "$gbs" "total_size" "total_size" ""
+bytesPrefix "$gbs" "total_weight" "total_weight" "WU"
 printInteger "$gbs" "utxo_increase" "utxo_increase" ""
 printInteger "$gbs" "utxo_increase_actual" "utxo_increase_actual" ""
-bytesPrefix "$gbs" "utxo_size_inc"
-bytesPrefix "$gbs" "utxo_size_inc_actual"
+bytesPrefix "$gbs" "utxo_size_inc" "utxo_size_inc" ""
+bytesPrefix "$gbs" "utxo_size_inc_actual" "utxo_size_inc_actual" ""
 printInteger "$gbs" "txs" "txs" ""
 totalOut=$(grep '"total_out"' <<< "$gbs" |grep -E --only-matching "[0-9]+")
 awk -v tOut="$totalOut" -v q="'" \
@@ -202,6 +229,6 @@ awk -v tOut="$totalOut" -v q="'" \
 printInteger "$gbs" "avgfeerate" "avgfeerate" "sat/vB"
 printInteger "$gbs" "minfeerate" "minfeerate" "sat/vB"
 printInteger "$gbs" "maxfeerate" "maxfeerate" "sat/vB"
-echo "$gbs" | grep --after-context=5 '"feerate_percentiles"' \
+grep --after-context=5 '"feerate_percentiles"' <<< "$gbs" \
      |tr -d '\n"[' |sed 's/: /:/' |sed 's/    / /g'
 echo ""
