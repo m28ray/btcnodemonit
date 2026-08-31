@@ -147,11 +147,11 @@ gnt=$($bitcoinCli getnettotals)
 gmi=$($bitcoinCli getmempoolinfo)
 gbs=$($bitcoinCli getblockstats $gbc)
 # Added "|| true" below because 'grep --count' error exits when count is 0
-bip110Count=$($bitcoinCli getpeerinfo |grep --count "REDUCED_DATA?" || true)
+blake2bCount=$($bitcoinCli getpeerinfo |grep --count "BLAKE2B" || true)
 # More data
 ### Linux and Mac OS compatible 'df' command options
 if df --output=avail --block-size=1 / >/dev/null 2>&1; then
-  diskAvail=$(df --output=avail --block-size=1 "$bitcoinDir" |grep --invert-match "Avail")
+  diskAvail=$(df --output=avail --block-size=1 "$bitcoinDir" |grep -E -o "[0-9]+")
 else
   # 'df' command options for MAC OS. Suggested by AI.
   # Multiply 4th colum by 1024 to convert KB into bytes
@@ -167,7 +167,7 @@ echo "  $hostName  $date"
 printInteger "$gni" "connections" "connections" ""
 printInteger "$gni" "connections_in" "connections_in" ""
 printInteger "$gni" "connections_out" "connections_out" ""
-echo "  bip110 peers: $bip110Count"
+echo "  blake2b peers: $blake2bCount"
 bytesPrefix "$gnt" "totalbytesrecv" "totalbytesrecv" ""
 bytesPrefix "$gnt" "totalbytessent" "totalbytessent" ""
 bytesPrefix "$gnt" "bytes_left_in_cycle" "bytes_left_in_cycle" ""
