@@ -164,7 +164,7 @@ gni=$(< "$jsonDir/${files[1]}") # getnetworkinfo
 gnt=$(< "$jsonDir/${files[2]}") # getnettotals
 gmi=$(< "$jsonDir/${files[3]}") # getmempoolinfo
 gbs=$(< "$jsonDir/${files[4]}") # getblockstats
-bip110Count=$(grep --count "REDUCED_DATA?" "$jsonDir/${files[5]}" \
+blake2bCount=$(grep --count "BLAKE2B" "$jsonDir/${files[5]}" \
             || true) # getpeerinfo
 
 # Confirm getblockcount and getblockstats are for the same block
@@ -193,7 +193,7 @@ echo "  date: $date"
 printInteger "$gni" "connections" "connections" ""
 printInteger "$gni" "connections_in" "connections_in" ""
 printInteger "$gni" "connections_out" "connections_out" ""
-echo "  bip110 peers: $bip110Count"
+echo "  blake2b peers: $blake2bCount"
 bytesPrefix "$gnt" "totalbytesrecv" "totalbytesrecv" ""
 bytesPrefix "$gnt" "totalbytessent" "totalbytessent" ""
 bytesPrefix "$gnt" "bytes_left_in_cycle" "bytes_left_in_cycle" ""
