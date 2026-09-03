@@ -60,10 +60,9 @@ function bytesPrefix {
   line=$(grep "\"$2\"" <<< "$1")
   text="$3"
   bytes=$(grep -E --only-matching "[0-9]+" <<< "$line")
-  if grep --quiet -- "-[0-9]" <<< "$line"; then
+  negSign=""
+  if [[ "$line" =~ -[0-9] ]]; then
     negSign="-"
-  else
-    negSign=""
   fi
   unit="B"
   if ! [[ -z $4 ]]; then
@@ -93,11 +92,11 @@ function minutesSinceMined {
   unixSeconds=$(date +%s)
   blockTime=$(grep "\"time\"" <<<"$1" |grep -E --only-matching "[0-9]+")
   if [[ $(( ($unixSeconds-$blockTime)/60 )) -lt 180 ]]; then
-    awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" \
-    'BEGIN {printf "%.1f min", (unixSeconds-blockTime)/60}'
+    awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" -v q="'" \
+    'BEGIN {printf "%"q".1f min", (unixSeconds-blockTime)/60}'
   else
-    awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" \
-    'BEGIN {printf "%.1f h", (unixSeconds-blockTime)/60/60}'
+    awk -v unixSeconds="$unixSeconds" -v blockTime="$blockTime" -v q="'" \
+    'BEGIN {printf "%"q".1f h", (unixSeconds-blockTime)/60/60}'
   fi
 }
 
@@ -165,7 +164,7 @@ gnt=$(< "$jsonDir/${files[2]}") # getnettotals
 gmi=$(< "$jsonDir/${files[3]}") # getmempoolinfo
 gbs=$(< "$jsonDir/${files[4]}") # getblockstats
 blake2bCount=$(grep --count "BLAKE2B" "$jsonDir/${files[5]}" \
-            || true) # getpeerinfo
+             || true) # getpeerinfo
 
 # Confirm getblockcount and getblockstats are for the same block
 if [[ showBlockStats -eq 1 ]]; then
@@ -187,26 +186,29 @@ else
   date=$(date -r $timeMilliS "+%Y-%m-%d %I:%M:%S %p %Z")
 fi
 
+blake2bPerc=$(grep '"connections"' <<< "$gni" | grep -E --only-matching "[0-9]+" \
+  | awk -v blake2b="$blake2bCount" '{printf "%u", blake2b / $1 * 100}')
+
 
 # Format output
 echo "  date: $date"
 printInteger "$gni" "connections" "connections" ""
-printInteger "$gni" "connections_in" "connections_in" ""
-printInteger "$gni" "connections_out" "connections_out" ""
-echo "  blake2b peers: $blake2bCount"
-bytesPrefix "$gnt" "totalbytesrecv" "totalbytesrecv" ""
-bytesPrefix "$gnt" "totalbytessent" "totalbytessent" ""
-bytesPrefix "$gnt" "bytes_left_in_cycle" "bytes_left_in_cycle" ""
-grep '"time_left_in_cycle"' <<< "$gnt" |grep -E --only-matching "[0-9]+" \
-     |awk '{printf "  time_left_in_cycle: %.2f h\n", $1/60/60}'
+printInteger "$gni" "connections_in" "connections in" ""
+printInteger "$gni" "connections_out" "connections out" ""
+echo "  blake2b peers: $blake2bCount  $blake2bPerc%"
+bytesPrefix "$gnt" "totalbytesrecv" "total bytes recv" ""
+bytesPrefix "$gnt" "totalbytessent" "total bytes sent" ""
+bytesPrefix "$gnt" "bytes_left_in_cycle" "bytes left in cycle" ""
+grep '"time_left_in_cycle"' <<< "$gnt" | grep -E --only-matching "[0-9]+" \
+  | awk -v q="'" '{printf "  time left in cycle: %"q".2f h\n", $1/60/60}'
 echo ""
 printInteger "$gmi" "size" "mempool tx count" ""
 bytesPrefix "$gmi" "bytes" "mempool virtual bytes" "vB"
-total_fee=$(grep '"total_fee"' <<< "$gmi" |grep -E --only-matching "[0-9.]+")
+totalFee=$(grep '"total_fee"' <<< "$gmi" | grep -E --only-matching "[0-9.]+")
 if [[ "$(detectCommaAsDecimalSeparator)" == "true" ]]; then
-  total_fee="$(tr '.' ',' <<< "$total_fee")"
+  totalFee="$(tr '.' ',' <<< "$totalFee")"
 fi
-echo "  mempool total_fee: $total_fee BTC"
+echo "  mempool total fee: $totalFee BTC"
 bytesPrefix "$gmi" "usage" "mempool memory usage" ""
 echo ""
 
@@ -216,19 +218,19 @@ if [[ showBlockStats -eq 0 ]]; then
   exit 0
 fi
 echo "  $(minutesSinceMined "$gbs") ago"
-bytesPrefix "$gbs" "total_size" "total_size" ""
-bytesPrefix "$gbs" "total_weight" "total_weight" "WU"
-printInteger "$gbs" "utxo_increase" "utxo_increase" ""
-printInteger "$gbs" "utxo_increase_actual" "utxo_increase_actual" ""
-bytesPrefix "$gbs" "utxo_size_inc" "utxo_size_inc" ""
-bytesPrefix "$gbs" "utxo_size_inc_actual" "utxo_size_inc_actual" ""
+bytesPrefix "$gbs" "total_size" "total size" ""
+bytesPrefix "$gbs" "total_weight" "total weight" "WU"
+grep '"total_out"' <<< "$gbs" | grep -E --only-matching "[0-9]+" \
+  | awk -v q="'" '{printf "  total out: %"q".2f BTC\n", $1/100000000}'
 printInteger "$gbs" "txs" "txs" ""
-totalOut=$(grep '"total_out"' <<< "$gbs" |grep -E --only-matching "[0-9]+")
-awk -v tOut="$totalOut" -v q="'" \
-    'BEGIN {printf "  total_out: %"q".2f BTC\n", tOut/100000000}'
-printInteger "$gbs" "avgfeerate" "avgfeerate" "sat/vB"
-printInteger "$gbs" "minfeerate" "minfeerate" "sat/vB"
-printInteger "$gbs" "maxfeerate" "maxfeerate" "sat/vB"
-grep --after-context=5 '"feerate_percentiles"' <<< "$gbs" \
-     |tr -d '\n"[' |sed 's/: /:/' |sed 's/    / /g'
-echo ""
+printInteger "$gbs" "avgfeerate" "avg feerate" "sat/vB"
+printInteger "$gbs" "minfeerate" "min feerate" "sat/vB"
+printInteger "$gbs" "maxfeerate" "max feerate" "sat/vB"
+frp=($(grep --after-context=5 '"feerate_percentiles"' <<< "$gbs" \
+    | grep -E --only-matching "[0-9]+"))
+printf "  feerate percentiles sat/vB: %s, %s, %s, %s, %s\n" \
+  "${frp[0]}" "${frp[1]}" "${frp[2]}" "${frp[3]}" "${frp[4]}"
+printInteger "$gbs" "utxo_increase" "utxo increase" ""
+printInteger "$gbs" "utxo_increase_actual" "utxo increase actual" ""
+bytesPrefix "$gbs" "utxo_size_inc" "utxo size inc" ""
+bytesPrefix "$gbs" "utxo_size_inc_actual" "utxo size inc actual" ""
