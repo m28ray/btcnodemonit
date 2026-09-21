@@ -33,8 +33,8 @@ function bytesPrefix {
 
 function countPeers {
   local total b2b
-  total=$(grep --count "\"id\"" "$peerInfoFile")
-  b2b=$(grep --count "BLAKE2B" "$peerInfoFile")
+  total=$(grep --count "\"id\"" "$peerInfoFile" || true)
+  b2b=$(grep --count "BLAKE2B" "$peerInfoFile" || true)
   printf "Connections: %u   BLAKE2b: %u   %u%%\n\n" \
     "$total" "$b2b" "$(( 100 * $b2b / $total ))"
 }
