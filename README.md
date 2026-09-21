@@ -19,11 +19,11 @@ Show node stats and given block stats then exit: `./btcnodemonit.sh [blockNumber
 
 **User defined variables**
 
-<ins>bitcoinDir<ins>
+`bitcoinDir`
 
-If left blank the default is "/". Used by `df` command to show free disk space.
+If left blank the default is "/". Used by `df` to show free disk space.
 
-<ins>bitcoinCli<ins>
+`bitcoinCli`
 
 The `bitcoin-cli` command and optional arguments. The default value is `bitcoin-cli` without arguments.
 
