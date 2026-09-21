@@ -3,7 +3,7 @@
 ```
 chmod +x btcnodemonit.sh
 chmod +x json-files-btcnodemonit.sh
-chmod +x peers-jsonfiles.sh
+chmod +x peers-jsonfile.sh
 ```
 ## Script 1: btcnodemonit.sh
 This is the only script that queries the Bitcoin node directly, and is run on the Bitcoin node computer.
@@ -59,7 +59,7 @@ scp user@nodeip:jsonDir/*.json .
 ./json-files-btcnodemonit.sh
 ```
 
-## Script 3: peers-jsonfiles.sh
+## Script 3: peers-jsonfile.sh
 This script outputs a peer list with the following columns.
 
 `Address` `In/Out` `Bytes Sent` `Bytes Recv` `Connection Time` `Subver`
@@ -81,6 +81,6 @@ This can be automated. Below is a basic example.
 ```
 cd my-json-scripts
 scp user@nodeip:jsonDir/getpeerinfo.json .
-./peers-jsonfiles.sh
+./peers-jsonfile.sh
 ```
 
