@@ -14,8 +14,7 @@ This is the only script that queries the Bitcoin node directly, and is run on th
 
 Show node stats and recent block stats then exit: `./btcnodemonit.sh` 
 
-Show node stats and given block stats then exit: `./btcnodemonit.sh [blockNumber]` \
-`./btcnodemonit.sh 912345`
+Show node stats and given block stats then exit: `./btcnodemonit.sh [blockNumber]` `./btcnodemonit.sh 912345`
 
 
 **User defined variables**
@@ -51,8 +50,8 @@ bitcoin-cli getblockstats $(< jsonDir/getblockcount.json) > jsonDir/getblockstat
 bitcoin-cli getpeerinfo > jsonDir/getpeerinfo.json
 ```
 
-Next you must copy the json files to the computer where you will run the script. 
-Skip if you will run the script on the Bitcoin node computer.
+Next, copy the json files to the computer where you will run the script. 
+Skip this step if you are running the script on the Bitcoin node itself.
 This can be automated. Below is a basic example.
 ```
 cd my-json-scripts
@@ -61,11 +60,11 @@ scp user@nodeip:jsonDir/*.json .
 ```
 
 ## Script 3: peers-jsonfiles.sh
-This script shows the list of peers with the following columns.
+This script outputs a peer list with the following columns.
 
-`"Address" "In/Out" "Bytes Sent" "Bytes Recv" "Connection Time" "Subver"`
+`Address` `In/Out` `Bytes Sent` `Bytes Recv` `Connection Time` `Subver`
 
-It requires the **jq** program to be installed. The script is useful to identify bandwidth abusers if you are tunneling through a paid VPS or your internet bandwidth is metered.
+**Requires jq**. It is useful for identifying bandwidth abusers when you tunnel through a VPS or have a metered internet connection.
 
 ### How to use
 Place the script in the same directory as the .json files.
@@ -76,8 +75,8 @@ mkdir jsonDir
 bitcoin-cli getpeerinfo > jsonDir/getpeerinfo.json
 ```
 
-Next you must copy the getpeerinfo.json file to the computer where you will run the script. 
-Skip if you will run the script on the Bitcoin node computer.
+Next, copy `getpeerinfo.json` to the computer where you will run the script. 
+Skip this step if you are running the script on the Bitcoin node itself.
 This can be automated. Below is a basic example.
 ```
 cd my-json-scripts
