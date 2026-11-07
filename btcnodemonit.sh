@@ -32,7 +32,6 @@ bitcoinCli="bitcoin-cli"
 ################################################
 
 set -o errexit # Exit immediately if any command returns a non-zero exit status
-# set -o xtrace # Uncomment for debugging
 
 # bitcoinDir default is "/" if empty
 bitcoinDir="${bitcoinDir:-/}"
@@ -127,8 +126,9 @@ gmi=$($bitcoinCli getmempoolinfo)
 gbs=$($bitcoinCli getblockstats $gbc)
 # Added "|| true" below because 'grep --count' error exits when count is 0
 blake2bCount=$($bitcoinCli getpeerinfo |grep --count "BLAKE2B" || true)
+
 # More data
-### Linux and Mac OS compatible 'df' command options
+# Linux and Mac OS compatible 'df' command options
 if df --output=avail --block-size=1 / >/dev/null 2>&1; then
   diskAvail=$(df --output=avail --block-size=1 "$bitcoinDir" |grep -E -o "[0-9]+")
 else
@@ -136,13 +136,16 @@ else
   # Multiply 4th colum by 1024 to convert KB into bytes
   diskAvail=$(df -k "$bitcoinDir" | tail -n 1 | awk '{printf "%.0f", $4 * 1024}')
 fi
-systemLoad=$(uptime |grep -E --only-matching "load average.+")
+systemLoad=$(LANG=C uptime |grep -E --only-matching "load average.+")
 hostName=$(hostname)
 minutesSM=$(minutesSinceMined "$gbs")
 date=$(date "+%Y-%m-%d %I:%M:%S %p %Z")
 
-blake2bPerc=$(grep '"connections"' <<< "$gni" | grep -E --only-matching "[0-9]+" \
+blake2bPerc=0
+if [[ $blake2bCount -gt 0 ]]; then
+  blake2bPerc=$(grep '"connections"' <<< "$gni" | grep -E --only-matching "[0-9]+" \
   | awk -v blake2b="$blake2bCount" '{printf "%u", blake2b / $1 * 100}')
+fi
 
 
 # Format output
