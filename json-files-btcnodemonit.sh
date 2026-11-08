@@ -28,7 +28,6 @@ getpeerinfo.json
 )
 
 set -o errexit # Exit immediately if any command returns a non-zero exit status
-# set -o xtrace # Uncomment for debugging
 
 readonly showBlockStats=1
 
@@ -146,11 +145,11 @@ gbs=$(< "$jsonDir/${files[4]}") # getblockstats
 blake2bCount=$(grep --count "BLAKE2B" "$jsonDir/${files[5]}" \
              || true) # getpeerinfo
 
-# Confirm getblockcount and getblockstats are for the same block
+# Confirm getblockcount and getblockstats are the same block
 if [[ showBlockStats -eq 1 ]]; then
   blockStatsHeight=$(grep '"height"' <<< "$gbs" | grep -E --only-matching "[0-9]+")
   if ! [[ $gbc -eq  $blockStatsHeight ]]; then
-    echo "Error: getblockcount and getblockstats are not for the same block"
+    echo "Error: getblockcount and getblockstats are not the same block"
     exit 1
   fi
 fi
@@ -166,8 +165,11 @@ else
   date=$(date -r $timeMilliS "+%Y-%m-%d %I:%M:%S %p %Z")
 fi
 
-blake2bPerc=$(grep '"connections"' <<< "$gni" | grep -E --only-matching "[0-9]+" \
+blake2bPerc=0
+if [[ $blake2bCount -gt 0 ]]; then
+  blake2bPerc=$(grep '"connections"' <<< "$gni" | grep -E --only-matching "[0-9]+" \
   | awk -v blake2b="$blake2bCount" '{printf "%u", blake2b / $1 * 100}')
+fi
 
 
 # Format output

@@ -8,7 +8,7 @@ chmod +x peers-jsonfile.sh
 ## Script 1: btcnodemonit.sh
 This is the only script that queries the Bitcoin node directly, and is run on the Bitcoin node computer.
 
-![Screenshot](/Screenshot-light.png)
+![Screenshot](/Screenshot1.png)
 
 ### How to use
 
