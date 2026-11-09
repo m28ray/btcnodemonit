@@ -1,3 +1,6 @@
+> [!NOTE]
+> Work will continue at [https://github.com/m28ray/xbtnodemonit](https://github.com/m28ray/xbtnodemonit)
+
 ## First steps
 **Make the scripts executable** 
 ```
